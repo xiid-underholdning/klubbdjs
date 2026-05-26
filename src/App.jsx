@@ -1367,11 +1367,22 @@ function DJBrowse({djs,venue,jobs,onToggleFav,onViewProfile,onBookDirect}) {
   );
 }
 
+function downloadFile(dataUrl, filename) {
+  const a = document.createElement("a");
+  a.href = dataUrl;
+  a.download = filename;
+  a.click();
+}
+
 function DJProfileModal({dj,jobs,venue,onToggleFav,onBookDirect,onClose}) {
   const rating = avgRating(dj.id, jobs);
   const favIds = venue?.favorites || [];
   const canFav = !!venue && !!onToggleFav;
   const canBook = !!onBookDirect;
+  const pressPhotos = dj.pressPhotos || [];
+  const pressDoc = dj.pressDoc || null;
+  const hasPressKit = pressPhotos.length > 0 || pressDoc;
+
   return (
     <Modal title="Artist-profil" onClose={onClose}>
       <div style={{textAlign:"center",marginBottom:14}}>
@@ -1385,6 +1396,30 @@ function DJProfileModal({dj,jobs,venue,onToggleFav,onBookDirect,onClose}) {
       {dj.instagram&&<div style={{marginBottom:8}}><a href={`https://instagram.com/${dj.instagram}`} target="_blank" rel="noopener noreferrer" style={{color:C.pink,fontSize:13,textDecoration:"none"}}>📸 @{dj.instagram}</a></div>}
       {dj.bio&&<div style={{color:C.muted,fontSize:13,lineHeight:1.6,marginBottom:12,fontStyle:"italic"}}>"{dj.bio}"</div>}
       <div style={{marginBottom:16}}>{(dj.genres||[]).map(g=><span key={g} style={chip(true)}>{g}</span>)}</div>
+
+      {/* Press kit */}
+      {hasPressKit&&<div style={{marginBottom:16,padding:"12px 14px",background:C.surface,borderRadius:10,border:`1px solid ${C.border}`}}>
+        <div style={{fontWeight:700,fontSize:13,marginBottom:10}}>📁 Pressekit</div>
+        {pressPhotos.length>0&&<>
+          <div style={{fontSize:11,color:C.muted,marginBottom:6}}>Pressebilder ({pressPhotos.length})</div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+            {pressPhotos.map((p,i)=>(
+              <div key={i} style={{position:"relative",cursor:"pointer"}} onClick={()=>downloadFile(p,`${dj.name.replace(/\s/g,"_")}_pressebilde_${i+1}.jpg`)}>
+                <img src={p} alt={`Pressebilde ${i+1}`} style={{width:72,height:72,objectFit:"cover",borderRadius:8,border:`1px solid ${C.border}`}}/>
+                <div style={{position:"absolute",inset:0,borderRadius:8,background:"rgba(0,0,0,.4)",display:"flex",alignItems:"center",justifyContent:"center",opacity:0,transition:".15s"}}
+                  onMouseEnter={e=>e.currentTarget.style.opacity=1} onMouseLeave={e=>e.currentTarget.style.opacity=0}>
+                  <span style={{color:"#fff",fontSize:18}}>⬇</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>}
+        {pressDoc&&<button onClick={()=>downloadFile(pressDoc.data, pressDoc.name)}
+          style={{...btnBase,background:`${C.accent}20`,border:`1px solid ${C.accent}44`,color:C.pop,fontSize:12,padding:"6px 12px",width:"100%"}}>
+          ⬇ Last ned presseskriv — {pressDoc.name}
+        </button>}
+      </div>}
+
       <Row>
         {canFav&&<button onClick={()=>onToggleFav(dj.id)} style={{...btnBase,border:`1px solid ${favIds.includes(dj.id)?C.red:C.accent}`,color:favIds.includes(dj.id)?C.red:C.pop,background:favIds.includes(dj.id)?`${C.red}20`:"transparent"}}>
           {favIds.includes(dj.id)?"💔 Fjern favoritt":"❤️ Legg til favoritt"}
@@ -1802,6 +1837,50 @@ function DJView({user,jobs,onJobs,onUpdateUser,addNotif,myNotifs}) {
         </Card>
         <NotifPrefs user={user} onSave={onUpdateUser}/>
         <ChangePassword user={user} onSave={onUpdateUser}/>
+        <Card>
+          <div style={{fontWeight:700,marginBottom:12}}>📁 Pressekit</div>
+          <div style={{color:C.muted,fontSize:12,marginBottom:12,lineHeight:1.5}}>
+            Last opp pressebilder og presseskriv. Utesteder kan laste disse ned direkte fra profilen din.
+          </div>
+          {/* Press photos */}
+          <Lbl>Pressebilder (maks 5)</Lbl>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
+            {(user.pressPhotos||[]).map((p,i)=>(
+              <div key={i} style={{position:"relative"}}>
+                <img src={p} alt="" style={{width:72,height:72,objectFit:"cover",borderRadius:8,border:`1px solid ${C.border}`}}/>
+                <button onClick={()=>onUpdateUser({...user,pressPhotos:(user.pressPhotos||[]).filter((_,j)=>j!==i)})}
+                  style={{position:"absolute",top:-6,right:-6,background:C.red,border:"none",borderRadius:"50%",width:18,height:18,cursor:"pointer",color:"#fff",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>✕</button>
+              </div>
+            ))}
+            {(user.pressPhotos||[]).length<5&&<label style={{width:72,height:72,borderRadius:8,border:`2px dashed ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:C.muted,fontSize:22}}>
+              +
+              <input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{
+                const f=e.target.files?.[0]; if(!f)return;
+                const b=await toB64(f);
+                onUpdateUser({...user,pressPhotos:[...(user.pressPhotos||[]),b]});
+              }}/>
+            </label>}
+          </div>
+          {/* Press document */}
+          <Lbl>Presseskriv (PDF eller Word)</Lbl>
+          {user.pressDoc
+            ?<div style={{display:"flex",alignItems:"center",gap:8,background:C.surface,borderRadius:8,padding:"8px 12px",marginBottom:8}}>
+              <span style={{fontSize:20}}>📄</span>
+              <div style={{flex:1,fontSize:12,color:C.txt}}>{user.pressDoc.name}</div>
+              <button onClick={()=>onUpdateUser({...user,pressDoc:null})}
+                style={{background:"none",border:"none",color:C.red,cursor:"pointer",fontSize:14}}>✕</button>
+            </div>
+            :<label style={{...btnBase,border:`1px solid ${C.border}`,color:C.muted,background:"transparent",fontSize:12,display:"inline-block",cursor:"pointer",marginBottom:8}}>
+              📄 Last opp dokument
+              <input type="file" accept=".pdf,.doc,.docx" style={{display:"none"}} onChange={async e=>{
+                const f=e.target.files?.[0]; if(!f)return;
+                const reader=new FileReader();
+                reader.onload=ev=>onUpdateUser({...user,pressDoc:{name:f.name,data:ev.target.result}});
+                reader.readAsDataURL(f);
+              }}/>
+            </label>
+          }
+        </Card>
       </>}
     </Page>
   );
