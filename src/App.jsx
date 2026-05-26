@@ -155,7 +155,7 @@ const WEEKDAYS=["Søndag","Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørda
 
 /* ─── VILKÅR ─────────────────────────────────────────────────────────────── */
 const T_VENUE=[{t:"Oppdragsgivers ansvar",b:"Oppdragsgiver er ansvarlig for profesjonelt lyd- og teknisk utstyr, klart ved artists ankomst."},{t:"1. Transport og opphold",b:"Transport og opphold dekkes av oppdragsgiver og legges til faktura.\nReise: JA · Hotell: JA"},{t:"2. Arbeidsdager",b:"Arbeidsdag >10 t: +kr 2 000,-/artist. Ekstra døgn: kr 5 000,-/artist/døgn."},{t:"3. Betaling",b:"XIID fakturerer oppdragsgiver. Artisten fakturerer XIID. Forfall: minimum 7 dager."},{t:"4. Avlysning",b:"Etter signering: 50 % · Innen 2 mnd: 75 % · Innen 30 dager: 100 % av honorar."},{t:"5. Øvrige",b:"Alle vilkår bindende. Endringer skriftlig. Norsk rett. Oslo tingrett."}];
-const T_DJ=[{t:"Artistens rolle",b:"Artisten er selvstendig næringsdrivende, ikke ansatt av XIID AS."},{t:"1. Fakturering",b:"Artisten fakturerer XIID AS – aldri utestedet direkte.\nSats: kr 1 000,-/t + kr 1 000,- fast påslag."},{t:"2. Transport",b:"Dekkes av oppdragsgiver via XIID. Artisten møter presis."},{t:"3. Standard",b:"Møt presis. Lever avtalt program. Opptré profesjonelt. Varsle XIID ved hindringer."},{t:"4. Avlysning",b:"Avlysning etter bekreftet booking: honorar mistes, artist kan suspenderes."},{t:"5. Øvrige",b:"XIID AS kan markedsføre samarbeidet. Norsk rett. Oslo tingrett."}];
+const T_DJ=[{t:"Artistens rolle",b:"Artisten er selvstendig næringsdrivende, ikke ansatt av XIID AS."},{t:"1. Fakturering",b:"Artisten fakturerer XIID AS – aldri utestedet direkte.\nSats: kr 1 000,-/t med mindre annet er avtalt."},{t:"2. Transport",b:"Dekkes av oppdragsgiver via XIID. Artisten møter presis."},{t:"3. Standard",b:"Møt presis. Lever avtalt program. Opptré profesjonelt. Varsle XIID ved hindringer."},{t:"4. Avlysning",b:"Avlysning etter bekreftet booking: honorar mistes, artist kan suspenderes."},{t:"5. Øvrige",b:"XIID AS kan markedsføre samarbeidet. Norsk rett. Oslo tingrett."}];
 const T_CONTRACT=[{t:"Avtalens formål",b:"Bekrefter avtalen mellom oppdragsgiver og artist, formidlet av KLUBB DJs by XIID AS."},{t:"Betaling",b:"XIID AS fakturerer oppdragsgiver. Artisten fakturerer XIID AS. Ingen direkte betalingsforhold."},{t:"Avlysning",b:"Etter signering: 50 % · Innen 2 mnd: 75 % · Innen 30 dager: 100 % av honorar."},{t:"Forpliktelser",b:"Artist: møt presis, lever avtalt program. Oppdragsgiver: utstyr klart, betal i tide."},{t:"Gjeldende rett",b:"Norsk rett. Oslo tingrett."}];
 
 /* ─── DEMO DATA ──────────────────────────────────────────────────────────── */
@@ -345,7 +345,7 @@ function LoginPage({users,pending,onLogin,onRegisterPending}) {
     onLogin(u);
   };
   const doAdmin=()=>{
-    if(form.pass===ADMIN_PASS)onLogin({id:"admin",role:"admin",name:"XIID Admin",email:"admin@xiid.no"});
+    if(form.pass===(ssGet("adminPass")||ADMIN_PASS))onLogin({id:"admin",role:"admin",name:"XIID Admin",email:"admin@xiid.no"});
     else setErr("Feil passord.");
   };
   const submitVenue=()=>{
@@ -462,11 +462,7 @@ function LoginPage({users,pending,onLogin,onRegisterPending}) {
         ? <TermsBox title="Artistvilkår" terms={T_DJ} onAccept={submitDJ} onBack={()=>setShowDJTerms(false)} acceptLabel="Send søknad til XIID"/>
         : <><h2 style={{margin:"0 0 12px",fontSize:15}}>🎧 Registrer Artist</h2>
         <div style={{textAlign:"center",marginBottom:14}}>
-          <Img src={regAvatar} name={form.name||"?"} size={80} style={{display:"block",margin:"0 auto 10px",border:`3px solid ${regAvatar?C.green:C.border}`}}/>
-          <label style={{...btnBase,border:`1px solid ${regAvatar?C.green:C.accent}`,color:regAvatar?C.green:C.pop,background:regAvatar?`${C.green}15`:"transparent",padding:"6px 14px",cursor:"pointer",fontSize:12,display:"inline-block"}}>
-            {regAvatar?"✓ Bilde lastet opp":"📷 Last opp profilbilde"}
-            <input type="file" accept="image/*" style={{display:"none"}} onChange={handleRegPhoto}/>
-          </label>
+          <AvatarUpload src={regAvatar} name={form.name||"?"} size={80} onUpload={setRegAvatar} style={{margin:"0 auto"}}/>
         </div>
         <Lbl>Type *</Lbl>
         <div style={{display:"flex",gap:8,marginBottom:12}}>
@@ -555,10 +551,16 @@ function AdminView({users,venues,jobs,pending,onApprove,onReject,onJobs,onUsers,
                     <div style={{color:C.muted,fontSize:12,marginTop:3}}>Søkt av: <strong>{reg.userName}</strong></div>
                   </>
                   :<>
-                    <div style={{fontWeight:700,fontSize:15,marginTop:6}}>{reg.userData?.name}</div>
-                    <div style={{color:C.muted,fontSize:12}}>{reg.userData?.email}{reg.userData?.phone&&" · "+reg.userData.phone}</div>
-                    {reg.venueData&&<div style={{color:C.muted,fontSize:12}}>Sted: <strong>{reg.venueData.name}</strong> – {reg.venueData.city}</div>}
-                    {reg.userData?.instrument&&<div style={{color:C.muted,fontSize:12}}>Instrument: {reg.userData.instrument}</div>}
+                    <div style={{display:"flex",alignItems:"center",gap:10,marginTop:6,marginBottom:6}}>
+                      <Img src={reg.userData?.avatar} name={reg.userData?.name||"?"} size={64} style={{border:`2px solid ${C.border}`,flexShrink:0}}/>
+                      <div>
+                        <div style={{fontWeight:700,fontSize:15}}>{reg.userData?.name}</div>
+                        <div style={{color:C.muted,fontSize:12}}>{reg.userData?.email}{reg.userData?.phone&&" · "+reg.userData.phone}</div>
+                        {reg.venueData&&<div style={{color:C.muted,fontSize:12}}>Sted: <strong>{reg.venueData.name}</strong> – {reg.venueData.city}</div>}
+                        {reg.userData?.instrument&&<div style={{color:C.muted,fontSize:12}}>Instrument: {reg.userData.instrument}</div>}
+                        {reg.userData?.instagram&&<div style={{fontSize:12,color:C.pink}}>@{reg.userData.instagram}</div>}
+                      </div>
+                    </div>
                     {reg.userData?.bio&&<div style={{color:C.muted,fontSize:12,marginTop:4,fontStyle:"italic"}}>"{reg.userData.bio}"</div>}
                     {reg.userData?.genres&&<div style={{marginTop:6}}>{reg.userData.genres.map(g=><span key={g} style={chip(false)}>{g}</span>)}</div>}
                   </>}
@@ -644,7 +646,7 @@ function AdminView({users,venues,jobs,pending,onApprove,onReject,onJobs,onUsers,
 
       {tab==="search"&&<AdminJobSearch jobs={jobs} users={users} venues={venues}/>}
       {tab==="cal"&&<CalGrid jobs={booked}/>}
-      {tab==="konto"&&<><Sec>Min konto</Sec><ChangePassword user={{id:"admin",role:"admin",name:"XIID Admin",email:"admin@xiid.no",password:ADMIN_PASS}} onSave={()=>{}}/></>}
+      {tab==="konto"&&<><Sec>Min konto</Sec><ChangePassword user={{id:"admin",role:"admin",name:"XIID Admin",email:"admin@xiid.no",password:ssGet("adminPass")||ADMIN_PASS}} onSave={u=>{ssSet("adminPass",u.password);}}/></>}
     </Page>
   );
 }
@@ -1143,7 +1145,7 @@ function VenueJobCard({job,djs,jobs,onWantBook,onSendMsg,onViewDJProfile,onRateV
       {job.targetMode==="favorites"&&<div style={{fontSize:11,color:C.pink,marginBottom:6}}>❤️ Kun til favoritter</div>}
       <div style={{marginBottom:8}}>{(job.genres||[]).map(g=><span key={g} style={chip(true)}>{g}</span>)}</div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div><div style={{fontWeight:800,fontSize:14,color:C.pop}}>{fmtNOK(job.totalFee||0)}</div><div style={{fontSize:10,color:C.dim}}>{job.hours}t × 1000 + 1000 kr påslag</div></div>
+        <div><div style={{fontWeight:800,fontSize:14,color:C.pop}}>{fmtNOK(job.totalFee||0)}</div><div style={{fontSize:10,color:C.dim}}>{job.hours}t · kr 1 000,-/t</div></div>
         {isB&&<div style={{fontSize:12,color:C.muted}}>🎧 {job.bookedDjName}</div>}
       </div>
       {job.description&&<div style={{marginTop:7,paddingTop:7,borderTop:`1px solid ${C.border}`,fontSize:12,color:C.muted}}>{job.description}</div>}
@@ -1500,17 +1502,9 @@ function VenueSettings({user,venues,onUpdateUser,onVenues,onPending}) {
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10}}>
               <div style={{display:"flex",alignItems:"center",gap:10,flex:1,minWidth:0}}>
                 {/* Logo */}
-                <div style={{position:"relative",flexShrink:0}}>
-                  <Img src={ve.logo} name={ve.name} size={52} style={{borderRadius:10,border:`2px solid ${C.border}`}}/>
-                  <label style={{position:"absolute",bottom:-4,right:-4,background:C.accent,borderRadius:"50%",width:18,height:18,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:10}}>
-                    📷
-                    <input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{
-                      const f=e.target.files?.[0]; if(!f)return;
-                      const b=await toB64(f);
-                      onVenues(vs=>vs.map(v=>v.id===ve.id?{...v,logo:b}:v));
-                    }}/>
-                  </label>
-                </div>
+                <AvatarUpload src={ve.logo} name={ve.name} size={52}
+                  onUpload={b=>onVenues(vs=>vs.map(v=>v.id===ve.id?{...v,logo:b}:v))}
+                  style={{borderRadius:10,flexShrink:0}}/>
                 <div>
                   <div style={{fontWeight:600}}>{ve.name}</div>
                   <div style={{color:C.muted,fontSize:11}}>📍 {ve.city}{ve.address&&" · "+ve.address}</div>
@@ -1785,11 +1779,9 @@ function DJView({user,jobs,onJobs,onUpdateUser,addNotif,myNotifs}) {
         <NotifPrefs user={user} onSave={onUpdateUser}/>
         <Card>
           <div style={{textAlign:"center",marginBottom:16}}>
-            <Img src={user.avatar} name={user.name} size={88} style={{border:`3px solid ${C.accent}`,display:"block",margin:"0 auto 10px"}}/>
-            <label style={{...btnBase,border:`1px solid ${C.accent}`,color:C.pop,background:"transparent",padding:"6px 12px",cursor:"pointer",fontSize:11,display:"inline-block"}}>
-              {uploading?"Laster opp…":"📷 Last opp bilde"}
-              <input type="file" accept="image/*" style={{display:"none"}} onChange={handlePhoto}/>
-            </label>
+            <AvatarUpload src={user.avatar} name={user.name} size={88}
+              onUpload={async b=>{ onUpdateUser({...user,avatar:b}); }}
+              style={{margin:"0 auto"}}/>
           </div>
           <div style={{fontWeight:700,marginBottom:1}}>{user.name}</div>
           <div style={{color:C.muted,fontSize:12,marginBottom:14}}>{user.email}</div>
@@ -2219,6 +2211,59 @@ function PassField({lbl, value, onChange, placeholder}) {
 function LF({lbl,type="text",onChange,ph="",multiline,defaultValue,min}) {
   return(<div style={{marginBottom:10}}>{lbl&&<Lbl>{lbl}</Lbl>}{multiline?<textarea defaultValue={defaultValue} style={{...is,height:56,resize:"vertical",marginBottom:0}} placeholder={ph} onChange={e=>onChange(e.target.value)}/>:<input style={{...is,marginBottom:0}} type={type} placeholder={ph} defaultValue={defaultValue} min={min} onChange={e=>onChange(e.target.value)}/>}</div>);
 }
+function AvatarUpload({src, name, size=96, onUpload, style}) {
+  const [drag, setDrag] = useState(false);
+  const [pos, setPos]   = useState({x:50,y:50}); // percent
+  const [dragging, setDragging] = useState(false);
+  const startRef = useRef(null);
+  const containerRef = useRef(null);
+
+  const onMouseDown = e => {
+    if(!src)return;
+    e.preventDefault();
+    setDragging(true);
+    startRef.current = {mx:e.clientX, my:e.clientY, px:pos.x, py:pos.y};
+  };
+  const onMouseMove = e => {
+    if(!dragging||!startRef.current||!containerRef.current)return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const dx = (e.clientX - startRef.current.mx) / rect.width  * 100;
+    const dy = (e.clientY - startRef.current.my) / rect.height * 100;
+    setPos({
+      x: Math.max(0,Math.min(100, startRef.current.px + dx)),
+      y: Math.max(0,Math.min(100, startRef.current.py + dy))
+    });
+  };
+  const onMouseUp = () => setDragging(false);
+
+  return (
+    <div style={{position:"relative",width:size,height:size,...style}}
+      ref={containerRef}
+      onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}>
+      {/* Image with drag */}
+      <div style={{width:size,height:size,borderRadius:"50%",overflow:"hidden",border:`2px solid ${src?C.green:C.border}`,cursor:src?"move":"default",userSelect:"none"}}
+        onMouseDown={onMouseDown}>
+        {src
+          ? <img src={src} alt={name||""} draggable={false}
+              style={{width:"140%",height:"140%",objectFit:"cover",objectPosition:`${pos.x}% ${pos.y}%`,marginLeft:"-20%",marginTop:"-20%",pointerEvents:"none"}}/>
+          : <div style={{width:"100%",height:"100%",background:`linear-gradient(135deg,${C.accent},${C.hi})`,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:800,fontSize:size*0.35}}>{(name||"?")[0].toUpperCase()}</div>
+        }
+      </div>
+      {/* Upload button */}
+      <label style={{position:"absolute",bottom:0,right:0,background:C.accent,borderRadius:"50%",width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:14,boxShadow:"0 2px 6px rgba(0,0,0,.4)"}}>
+        📷
+        <input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{
+          const f=e.target.files?.[0]; if(!f)return;
+          const b=await toB64(f);
+          onUpload(b);
+          setPos({x:50,y:50});
+        }}/>
+      </label>
+      {src&&<div style={{position:"absolute",top:-4,left:"50%",transform:"translateX(-50%)",background:`${C.dim}cc`,borderRadius:5,padding:"1px 6px",fontSize:9,color:C.muted,whiteSpace:"nowrap",pointerEvents:"none"}}>dra for å justere</div>}
+    </div>
+  );
+}
+
 function Img({src,name,size,style}) {
   const[err,setErr]=useState(false);
   useEffect(()=>setErr(false),[src]);
