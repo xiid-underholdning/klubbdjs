@@ -1007,11 +1007,15 @@ function PostJobForm({venue,onPost,onSaveTemplate,onDeleteTemplate,djs}) {
             </label>
           ))}
         </div>
-        {f.dateMode==="single"&&<LF lbl="Dato *" type="date" min={today()} onChange={v=>fv("singleDate",v)}/>}
+        {f.dateMode==="single"&&<div style={{marginBottom:12}}>
+          <Lbl>Dato *</Lbl>
+          <input type="date" min={today()} value={f.singleDate||""} style={{...is,marginBottom:0}}
+            onChange={e=>fv("singleDate",e.target.value)}/>
+        </div>}
         {f.dateMode==="multi"&&<div style={{marginBottom:12}}>
           <Lbl>Legg til datoer</Lbl>
           <div style={{display:"flex",gap:8,marginBottom:8}}>
-            <input type="date" min={today()} style={{...is,flex:1}} onChange={e=>fv("addDateVal",e.target.value)}/>
+            <input type="date" min={today()} value={f.addDateVal||""} style={{...is,flex:1,marginBottom:0}} onChange={e=>fv("addDateVal",e.target.value)}/>
             <Btn onClick={addDate}>+ Legg til</Btn>
           </div>
           {f.multiDates.map(d=>(
@@ -1027,8 +1031,8 @@ function PostJobForm({venue,onPost,onSaveTemplate,onDeleteTemplate,djs}) {
             {WEEKDAYS.map((d,i)=><option key={i} value={i}>{d}</option>)}
           </select>
           <div style={{display:"flex",gap:10}}>
-            <div style={{flex:1}}><Lbl>Fra dato</Lbl><input type="date" min={today()} style={is} onChange={e=>fv("recurFrom",e.target.value)}/></div>
-            <div style={{flex:1}}><Lbl>Til dato</Lbl><input type="date" style={is} onChange={e=>fv("recurTo",e.target.value)}/></div>
+            <div style={{flex:1}}><Lbl>Fra dato</Lbl><input type="date" min={today()} value={f.recurFrom||""} style={{...is,marginBottom:0}} onChange={e=>fv("recurFrom",e.target.value)}/></div>
+            <div style={{flex:1}}><Lbl>Til dato</Lbl><input type="date" value={f.recurTo||""} style={{...is,marginBottom:0}} onChange={e=>fv("recurTo",e.target.value)}/></div>
           </div>
         </div>}
         {dates.length>0&&<div style={{background:`${C.accent}16`,border:`1px solid ${C.accent}44`,borderRadius:8,padding:"7px 11px",marginBottom:12,fontSize:12}}>
