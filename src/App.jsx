@@ -410,7 +410,7 @@ function LoginPage({users,pending,onLogin,onRegisterPending}) {
   if(mode==="start")return(
     <Center>
       {manual&&<ManualModal role={manual} onClose={()=>setManual(null)}/>}
-      <div style={{textAlign:"center",marginBottom:32}}><AppLogo big/><div style={{marginTop:10}}><Bdg col={C.accent} sm>📍 Kun {APP.city}</Bdg></div><div style={{marginTop:10,fontSize:11,color:C.dim,background:C.surface,border:`1px solid ${C.border}`,borderRadius:7,padding:"5px 12px",display:"inline-block"}}>Demo-passord: <strong style={{color:C.pop}}>demo123</strong></div></div>
+      <div style={{textAlign:"center",marginBottom:32}}><AppLogo big/><div style={{marginTop:10}}><Bdg col={C.accent} sm>📍 Kun {APP.city}</Bdg></div></div>
       <div style={{display:"grid",gap:8,marginBottom:10}}>
         {[{icon:"🏢",t:"Jeg er et utested",s:"Legg ut jobber og book artister",m:"venue",hi:true},{icon:"🎧",t:"Jeg er DJ / Artist",s:"Se ledige jobber og ta oppdrag",m:"dj",hi:false}].map(o=>(
           <button key={o.m} onClick={()=>{setMode(o.m);setGenres([]);setErr("");}} style={{...cs,cursor:"pointer",textAlign:"left",marginBottom:0,border:`1px solid ${o.hi?C.accent:C.border}`,background:o.hi?`${C.accent}18`:C.card,padding:14}}>
